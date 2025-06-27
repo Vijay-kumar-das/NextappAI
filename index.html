@@ -245,22 +245,89 @@
         }
 
         .stat-number {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             font-weight: bold;
             color: #f5576c;
-            text-shadow: 0 0 20px rgba(245, 87, 108, 0.5);
-            animation: statPulse 2s ease-in-out infinite;
+            text-shadow: 0 0 30px rgba(245, 87, 108, 0.8);
+            animation: statPulseGlow 3s ease-in-out infinite;
+            position: relative;
+            display: inline-block;
         }
 
-        @keyframes statPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+        @keyframes statPulseGlow {
+            0%, 100% { 
+                transform: scale(1);
+                text-shadow: 0 0 30px rgba(245, 87, 108, 0.8);
+            }
+            50% { 
+                transform: scale(1.08);
+                text-shadow: 0 0 40px rgba(245, 87, 108, 1), 0 0 60px rgba(240, 147, 251, 0.5);
+            }
+        }
+
+        .stat-number::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            background: radial-gradient(circle, rgba(245, 87, 108, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: statHalo 4s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes statHalo {
+            0%, 100% { 
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
+            50% { 
+                opacity: 1;
+                transform: scale(1.2);
+            }
+        }
+
+        .stat-item {
+            position: relative;
+            animation: statItemFloat 5s ease-in-out infinite;
+        }
+
+        .stat-item:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .stat-item:nth-child(2) {
+            animation-delay: 1.5s;
+        }
+
+        .stat-item:nth-child(3) {
+            animation-delay: 3s;
+        }
+
+        @keyframes statItemFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
         }
 
         .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.8;
-            margin-top: 0.5rem;
+            font-size: 0.95rem;
+            opacity: 0.9;
+            margin-top: 0.8rem;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            animation: statLabelGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes statLabelGlow {
+            0%, 100% { 
+                opacity: 0.9;
+            }
+            50% { 
+                opacity: 1;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 10px rgba(255, 255, 255, 0.3);
+            }
         }
 
         .cta-buttons {
@@ -1159,6 +1226,69 @@
                 this.style.transform = 'translateY(0) scale(1)';
             });
         });
+
+        // Hero stats counter animation
+        function animateHeroCounter(element, start, end, duration, suffix = '') {
+            let startTimestamp = null;
+            const originalText = element.textContent;
+            
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                
+                let current;
+                if (originalText.includes('%')) {
+                    current = Math.floor(progress * (end - start) + start) + '%';
+                } else if (originalText.includes('+')) {
+                    current = Math.floor(progress * (end - start) + start) + '+';
+                } else if (originalText.includes('/')) {
+                    current = '24/7'; // Keep 24/7 format
+                } else {
+                    current = Math.floor(progress * (end - start) + start) + suffix;
+                }
+                
+                element.textContent = current;
+                
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // Trigger hero stats animation when hero section comes into view
+        const heroStatsObserver = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const statNumbers = entry.target.querySelectorAll('.stat-number');
+                    
+                    // Animate each stat with different delays
+                    setTimeout(() => {
+                        animateHeroCounter(statNumbers[0], 0, 500, 2000); // 500+ Projects
+                    }, 500);
+                    
+                    setTimeout(() => {
+                        animateHeroCounter(statNumbers[1], 0, 98, 2000); // 98% Success
+                    }, 1000);
+                    
+                    setTimeout(() => {
+                        statNumbers[2].style.transform = 'scale(1.2)';
+                        setTimeout(() => {
+                            statNumbers[2].style.transform = 'scale(1)';
+                        }, 300);
+                    }, 1500); // 24/7 pulse effect
+                    
+                    heroStatsObserver.unobserve(entry.target);
+                }
+            });
+        }, {
+            threshold: 0.5
+        });
+
+        const heroStatsSection = document.querySelector('.hero-stats');
+        if (heroStatsSection) {
+            heroStatsObserver.observe(heroStatsSection);
+        }
     </script>
 </body>
 </html>
